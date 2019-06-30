@@ -1,0 +1,51 @@
+---
+
+- name: Install MySQL
+  hosts: all
+  tasks:
+    - name: Install MySQL
+      apt:
+        name: "{{item}}"
+        state: present
+        update_cache: yes
+      vars:
+        item:
+          - mysql-server
+          - mysql-client
+          - python-mysqldb
+
+
+- name: Configure MySQL
+  hosts: all
+  tasks:
+    - name: Configure my.cnf
+      copy: src=./files/my.cnf
+            dest=/etc/mysql/my.cnf
+            owner=root
+            group=root
+            mode=0640
+      notify:
+        - restart mysql
+
+    - name: Add mysql-user
+      mysql_user: name=mysql_service
+                  password=12345
+                  priv=*.*:ALL
+                  state=present
+      notify:
+        - start mysql
+
+  handlers:
+    - name: start mysql
+      service: name=mysql
+               enabled=yes
+               state=started
+    - name: restart mysql
+      service: name=mysql
+               enabled=yes
+               state=restarted
+
+
+
+# /sbin/iptables -A INPUT -i eth0 -s 192.168.33.0/24 -p tcp --destination-port 3306 -j ACCEPT
+# service iptables save
